@@ -46,6 +46,23 @@ async fn signup(body: json<SignupInput>, app_state: web::Data<AppState>) -> impl
     
 }
 
+#[post("/signin")]
+async fn signin(body: json<SignupInput>, app_state: web::Data<AppState>) -> impl Responder {
+    let users = app_state.users.lock().unwrap();
+
+    let user_found = users.iter().find(|u| u.username == body.username && u.password == body.password);
+
+    if user_found.is_some() {
+        HttpResponse::Ok().json(SignupResponse {
+            message: String::from("signed in")
+        })
+    } else {
+        HttpResponse::Unauthorized().json(SignupResponse {
+            message: String::from("invalid credentials")
+        })
+    }
+}
+
 struct User {
     id: u32,
     username: String,
@@ -69,6 +86,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
         .app_data(app_state.clone())
         .service(signup)
+        .service(signin)
     })
     .bind(("127.0.0.1", 8080))?
     .run()

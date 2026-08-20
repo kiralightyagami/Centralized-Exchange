@@ -33,5 +33,28 @@ app.post("/signup", (req,res) => {
     })
 })
 
+app.post("/signin", (req,res) => {
+    const { username, password } = req.body;
+    const user = USERS.find(u => u.username === username);
+    if (!user) {
+        res.status(404).json({
+            message: "user not found"
+        });
+        return;
+    }
+    if (user.password !== password) {
+        res.status(401).json({
+            message: "invalid password"
+        });
+        return;
+    }
+    res.json({
+        message: "successfully signed in"
+    });
+
+    
+})
+
+
 
 app.listen(3000);
