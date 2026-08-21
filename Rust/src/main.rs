@@ -12,10 +12,6 @@ struct SignupResponse {
 
 }
 
-#[get("/hello/{name}")]
-async fn greet(name: web::Path<String>) -> impl Responder {
-    format!("Hello {}!", name)
-}
 
 #[post("/signup")]
 async fn signup(body: json<SignupInput>, app_state: web::Data<AppState>) -> impl Responder {
@@ -82,7 +78,6 @@ async fn main() -> std::io::Result<()> {
     });
     
     HttpServer::new(move || {
-        App::new().service(greet)
         App::new()
         .app_data(app_state.clone())
         .service(signup)

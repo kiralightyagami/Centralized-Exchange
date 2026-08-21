@@ -55,6 +55,29 @@ app.post("/signin", (req,res) => {
     
 })
 
+app.post("/balance/onramp", (req,res) => {
+    
+})
+
+app.post("/balance/onramp", (req,res) => {
+    
+})
+
+app.post("/balance/deposit", (req,res) => {
+    
+})
+
+app.get("/balance/usd", (req,res) => {
+    
+})
+
+app.get("/balance", (req,res) => {
+    
+})
+
+app.post("/order", (req,res) => {
+    
+})
 
 
 app.listen(3000);
