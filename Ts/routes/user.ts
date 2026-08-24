@@ -70,9 +70,9 @@ router.post("/signin", (req, res) => {
 
 })
 
-//todo complete this
 
-router.post("/balance", authMiddleware, (req: AuthRequest, res) => {
+
+router.get("/balance", authMiddleware, (req: AuthRequest, res) => {
     const userId = req.userId!;
     res.json({
         usdBalance: usdBalances.get(userId),
@@ -87,7 +87,7 @@ router.post("/onramp", authMiddleware, (req: AuthRequest, res) => {
     res.sendStatus(200);
 })
 
-router.get("/deposit/:asset_symbol", authMiddleware, (req: AuthRequest, res) => {
+router.post("/deposit/:asset_symbol", authMiddleware, (req: AuthRequest, res) => {
     const userId = req.userId;
     const symbol = req.params.asset_symbol;
     const body = req.body as DepositRequest;
@@ -96,6 +96,8 @@ router.get("/deposit/:asset_symbol", authMiddleware, (req: AuthRequest, res) => 
     console.log(body.qty);
     res.sendStatus(200);
 })
+
+//todo complete this
 
 router.post("/order", (req, res) => {
 
