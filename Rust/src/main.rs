@@ -1,89 +1,38 @@
-use actix_web::{get, HttpResponse, web, App, HttpServer, Responder};
+use std::{collections::HashMap, sync::Mutex};
 
-#[derive(Serialize, Deserialize)]
-struct SignupInput {
-    pub username: String,
-    pub password: String
-}
+use actix_web::{App, HttpServer, web::{self}};
 
-#[derive(Serialize, Deserialize)]
-struct SignupResponse {
-    pub message: String,
+use crate::{routes::user::{balance, onramp, sign_in, sign_up}, types::user::User};
 
-}
-
-
-#[post("/signup")]
-async fn signup(body: json<SignupInput>, app_state: web::Data<AppState>) -> impl Responder {
-    let mut users = app_state.users.lock().unwrap();
-    let mut user_index = app_state.user_index.lock().unwrap();
-    
-    let user_found = users.iter().find(|u| u.username == body.username);
-
-    if user_found.is_none() {
-        *user_index = user_index + 1;
-
-    users.push(User {
-        id: user_index.clone(),
-        username: body.username.clone(),
-        password: body.password.clone()
-    });
-
-    drop(users);
-    HttpResponse::0k().json(SignupResponse {
-        message: String::from("signed up")
-    })
-    } else {
-        HttpResponse::Unauthorized().json(SignupResponse {
-            message: String::from("user already exists")
-        })
-    }
-    
-    
-}
-
-#[post("/signin")]
-async fn signin(body: json<SignupInput>, app_state: web::Data<AppState>) -> impl Responder {
-    let users = app_state.users.lock().unwrap();
-
-    let user_found = users.iter().find(|u| u.username == body.username && u.password == body.password);
-
-    if user_found.is_some() {
-        HttpResponse::Ok().json(SignupResponse {
-            message: String::from("signed in")
-        })
-    } else {
-        HttpResponse::Unauthorized().json(SignupResponse {
-            message: String::from("invalid credentials")
-        })
-    }
-}
-
-struct User {
-    id: u32,
-    username: String,
-    password: String
-}
+pub mod types;
+pub mod routes;
+pub mod middleware;
 
 struct AppState {
     user_index: Mutex<u32>,
-    users: Mutex<Vec<User>>
+    users: Mutex<Vec<User>>,
+    usd_balances: Mutex<HashMap<u32, u32>>,
+    stock_balances: Mutex<HashMap<u32, HashMap<String, u32>>>
 }
 
-#[actix_web::main] // or #[tokio::main]
+#[actix_web::main] 
 async fn main() -> std::io::Result<()> {
-    let app_state = web::Data::new(AppState{
+    let app_state = web::Data::new(AppState {
         users: Mutex::new(vec![]),
-        user_index:Mutex::new(0)
+        user_index: Mutex::new(0),
+        usd_balances: Mutex::new(HashMap::new()),
+        stock_balances: Mutex::new(HashMap::new())
     });
-    
+
     HttpServer::new(move || {
         App::new()
-        .app_data(app_state.clone())
-        .service(signup)
-        .service(signin)
+            .app_data(app_state.clone())
+            .service(sign_up)
+            .service(sign_in)
+            .service(balance)
+            .service(onramp)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", 3001))?
     .run()
     .await
 }
