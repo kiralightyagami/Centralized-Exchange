@@ -89,12 +89,17 @@ router.post("/onramp", authMiddleware, (req: AuthRequest, res) => {
 
 router.post("/deposit/:asset_symbol", authMiddleware, (req: AuthRequest, res) => {
     const userId = req.userId;
-    const symbol = req.params.asset_symbol;
+    const symbol = req.params.asset_symbol as string;
     const body = req.body as DepositRequest;
-    console.log(userId);
-    console.log(symbol);
-    console.log(body.qty);
-    res.sendStatus(200);
+    
+    const balances = stockBalances.get(userId!)!;
+    const existingBalance = balances.get(symbol) ?? 0;
+    balances.set(symbol, existingBalance + body.qty);
+
+    res.json({
+        message: "Successfully deposited"
+    });
+
 })
 
 //todo complete this
