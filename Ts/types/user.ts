@@ -48,3 +48,11 @@ export interface BalanceResponse {
     usd: number;
     assets: Record<string, number>;
 }
+
+export interface OrderRequest {
+    // type: "market" | "limit",
+    side: "bid" | "ask",
+    qty: number;
+    price: number,
+    asset: "sol" | "eth"
+}
