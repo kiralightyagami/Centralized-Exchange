@@ -12,12 +12,14 @@ client.connect();
 const receiveClient = createClient();
 
 const app = express();
-app.use(express.json());
+
 
 console.log(DATABASE_URL);
 const pool = new Pool({
     connectionString: DATABASE_URL
 });
+
+app.use(express.json());
 
 app.post("/signup", async (req, res) => {
     const { data, success } = CreateUserSchema.safeParse(req.body);

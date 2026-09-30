@@ -1,12 +1,18 @@
 import { createClient } from "redis";
 
 const client = createClient();
-client.connect();
+const sendClient = createClient();
+sendClient.connect();
 
-while(1) {
-    const element = await client.RPOP("engine");
+client.connect()
+    .then(async () => {
+        while (1) {
+            const element = await client.brPop("engine-queue", 1000);
 
-    if(!element) {
-        continue;
-    }
-}
+            if (!element) {
+                continue;
+            }
+
+            console.log(element);
+        }
+    });
