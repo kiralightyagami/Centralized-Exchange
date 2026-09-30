@@ -1,9 +1,15 @@
 import express from "express"
 import jwt from "jsonwebtoken";
-import { CreateUserSchema, SigninSchema } from "./types";
+import { CreateUserSchema, OnrampSchema, SigninSchema } from "./types";
 import { Pool } from "pg";
 import { DATABASE_URL, JWT_SECRET } from "./config";
 import { AuthMiddleware } from "./middleware";
+import { createClient } from "redis";
+
+const client = createClient();
+client.connect();
+
+const receiveClient = createClient();
 
 const app = express();
 app.use(express.json());
@@ -70,8 +76,27 @@ app.post("/signin", async (req, res) => {
     })
 })
 
-app.post("/onramp", AuthMiddleware, (req, res) => {
+app.post("/onramp", AuthMiddleware, async(req, res) => {
+    const {data, success} = OnrampSchema.safeParse(req.body);
+    if (!success) {
+        return res.status(411).json({
+            message: "Incorrect inputs"
+        })
+    }
 
+    await client.lPush("engine-queue", JSON.stringify({
+        type: "onramp",
+        payload: {
+            // @ts-ignore (todo: fix this)
+            userId: req.id,
+            amount: data.usd
+        }
+    }))
+
+    // todo: wait for acknowledgement and then res.
+    res.json({
+        message: "Onramp completed"
+    })
 })
 
 app.post("/deposit", AuthMiddleware, (req, res) => {
