@@ -50,3 +50,33 @@ test("onramp", async () => {
     expect(res.status).toBe(200);
     expect(body.message).toBe("Onramp completed");
 });
+
+test("get_balance", async () => {
+    const res = await fetch(`${BASE_URL}/balance`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+        },
+    });
+    const body = await res.json() as { balance: number };
+
+    expect(res.status).toBe(200);
+    expect(body.balance).toBe(100);
+});
+
+
+test("deposit", async () => {
+    const res = await fetch(`${BASE_URL}/deposit`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+        },
+        body: JSON.stringify({ ticker: "SOL", qty: 100 }),
+    });
+
+    const body = await res.json() as { message: string };
+
+    expect(res.status).toBe(200);
+});

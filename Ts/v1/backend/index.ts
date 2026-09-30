@@ -1,10 +1,14 @@
 import express from "express"
 import jwt from "jsonwebtoken";
-import { CreateUserSchema, OnrampSchema, SigninSchema } from "./types";
+import { CreateUserSchema, DepositSchema, OnrampSchema, SigninSchema } from "./types";
 import { Pool } from "pg";
 import { DATABASE_URL, JWT_SECRET } from "./config";
 import { AuthMiddleware } from "./middleware";
 import { createClient } from "redis";
+
+const QUEUE_NAME = "queue-" + Math.random().toString().substring(0, 5); // 0.1351
+
+const CALLBACKS = {}
 
 const client = createClient();
 client.connect();
@@ -101,8 +105,27 @@ app.post("/onramp", AuthMiddleware, async(req, res) => {
     })
 })
 
-app.post("/deposit", AuthMiddleware, (req, res) => {
+app.post("/deposit", AuthMiddleware, async(req, res) => {
+    const {data, success} = DepositSchema.safeParse(req.body);
+    if (!success) {
+        return res.status(411).json({
+            message: "Incorrect inputs"
+        })
+    }
 
+    await client.lPush("engine-queue", JSON.stringify({
+        type: "deposit",
+        payload: {
+            //@ts-ignore (fix-this)
+            userId: req.id,
+            qty: data.qty,
+            ticker: data.ticker
+        }
+    }))
+
+    res.json({
+        message: "Deposit successful"
+    })
 })
 
 app.post("/order", AuthMiddleware, (req, res) => {
@@ -113,9 +136,48 @@ app.post("/cancel", AuthMiddleware, (req, res) => {
 
 })
 
-app.get("/balance", AuthMiddleware, (req, res) => {
+app.get("/balance", AuthMiddleware, async (req, res) => {
+    const callbackId = Math.random();
+    await client.lPush("engine-queue", JSON.stringify({
+        type: "get_balances",
+        payload: {
+            //@ts-ignore (todo:fix-this)
+            userId: req.id,
+        },
+        queue: QUEUE_NAME,
+        callbackId
+    }))
 
+    console.log("hi");
+    const balance = await new Promise((resolve) => {
+        //@ts-ignore (todo:fix-this)
+        CALLBACKS[callbackId] = resolve;
+    })
+    console.log("after callback got called");
+    // loopback logic
+    // read from the queue
+
+    res.json({
+        balance
+    })
 })
+
+receiveClient.connect().then(async () => {
+    while(1) {
+        const res = await receiveClient.blPop(QUEUE_NAME, 1000);
+        console.log("reading from queue")
+        if (!res) {
+            continue;
+        }
+        console.log("read message")
+        console.log(res);
+        const parsedData = JSON.parse(res.element);
+        const callbackId = parsedData.callbackId;
+        const balance = parsedData.balance;
+        //@ts-ignore (fix-this)
+        CALLBACKS[callbackId](balance);
+    }
+});
 
 
 app.listen(3000);
