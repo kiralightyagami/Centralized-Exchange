@@ -1,6 +1,6 @@
 import z from "zod"
 
-const CreateUserSchema = z.object({
+export const CreateUserSchema = z.object({
     username: z.string(),
     password: z.string()
 });
@@ -18,3 +18,4 @@ export const DepositSchema = z.object({
     ticker: z.string(),
     qty: z.number()
 })
+
